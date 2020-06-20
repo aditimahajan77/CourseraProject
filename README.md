@@ -1,5 +1,7 @@
 # CourseraProject
+
 Segmentation and Clustering
+
 import pandas as pd
 import numpy as np
 import requests
