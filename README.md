@@ -2,7 +2,8 @@
 
 Segmentation and Clustering
 
-import pandas as pd
+# get the borough in the cell
+        import pandas as pd
 import numpy as np
 import requests
 
@@ -19,8 +20,7 @@ for table_cell in soup.find_all('td'):
         postal_code = table_cell.p.b.text # get the postal code
         postal_code_investigate = table_cell.span.text
         neighborhoods_data = table_cell.span.text # get the rest of the data in the cell
-        borough = neighborhoods_data.split('(')[0] # get the borough in the cell
-        
+        borough = neighborhoods_data.split('(')[0] 
         # if the cell is not assigned then ignore it
         if neighborhoods_data == 'Not assigned':
             neighborhoods = []
