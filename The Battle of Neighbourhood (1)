@@ -1,0 +1,2439 @@
+Scraping the website to get latitude and longitude
+
+import requests
+from bs4 import BeautifulSoup
+
+import pandas as pd
+Creating list of districts
+
+
+dist_li = []
+
+URL = 'https://indiamapia.com/Indore.html'
+page = requests.get(URL)
+
+page.status_code
+
+200
+
+soup = BeautifulSoup(page.content, 'html.parser')
+#print(soup.prettify())
+
+div = soup.findAll('div', attrs={'class': 'table-responsive'})
+
+#print(div)#findAll("div", {"class": "stylelistrow"})
+
+len(div)
+2
+
+#div[1]
+
+district_data = []
+
+for row in div[1].find_all('tr'):
+    for cell in row.find_all('td'):
+        #print(cell.text,end ='')
+        district_data.append(cell.text)
+        break
+
+#print(district_data)
+
+#print(district_data[0])
+we have to create the url in this way in order to get the required data:-https://indiamapia.com/Indore/Adhyaksha_Jila_Upbhokta_Forum_Azad_Nagar.html
+
+
+#place -> Neighborhood
+#Tehsil/ Taluka -> Borough
+column_names = ['PIN Code','Borough','Neighborhood','Latitude','Longitude']
+neighborhoods = pd.DataFrame(columns=column_names)
+
+#district_data[40]
+Collecting all the data
+
+for j in range(0,len(district_data)):
+    if(j != 40):
+        final_list = []
+        str1 = district_data[j]
+        listr1 = str1.split(' ')
+        #print(listr1)
+        str2 = ''
+        #print(len(listr1))
+        for i in range(0,len(listr1)):
+            if i != (len(listr1)-1):
+                str2 = str2 + listr1[i] + '_'
+            else:
+                str2 = str2 + listr1[i] + '.html'
+        urlnew = 'https://indiamapia.com/Indore/' + str2
+        #print(urlnew)
+
+
+        page = requests.get(urlnew)
+
+        #print(page.status_code)
+
+        soup2 = BeautifulSoup(page.content, 'html.parser')
+        #print(soup2.prettify())
+
+        div2 = soup2.findAll('div', attrs={'class': 'col-xs-12 col-sm-4 col-md-4 col-lg-4'})
+        #print(len(div2))
+
+        #we will use div[1]
+        for row in div2[1].find_all('tr'):
+            for cell in row.find_all('td'):
+                #print(cell.text,end ='')
+                final_list.append(cell.text)
+
+
+        li2 = []
+        for i in range(0,len(final_list)):
+            if ( (final_list[i] != '\nPlace :\n') and (final_list[i] != '\nPIN Code\n') and (final_list[i] != '\nDistrict :\n') and (final_list[i] != '\nTehsil/ Taluka :\n') and (final_list[i] != '\nState :\n') and (final_list[i] != '\nMadhya Pradesh\n')  and (final_list[i] != '\nLatitude :\n')  and (final_list[i] != '\nLongitude :\n')  ):
+                li2.append(final_list[i].replace('\n',''))
+
+        li2.remove('Indore')
+
+        neighborhoods = neighborhoods.append({'PIN Code': li2[1],
+                                                  'Borough': li2[2],
+                                                  'Neighborhood': li2[0],
+                                                  'Latitude': li2[3],
+                                                  'Longitude': li2[4]}, ignore_index=True)
+
+with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    print(neighborhoods)
+    PIN Code   Borough                                       Neighborhood  \
+0     452044    Indore           Adhyaksha Jila Upbhokta Forum Azad Nagar   
+1     453115  Depalpur                                               Agra   
+2     453551    Sanwer                                              Ajnod   
+3     453111  Depalpur                                             Alwasa   
+4     453441      Mhow                                        Ambachandan   
+5     452006    Indore                                  Army Head Quarter   
+6     453115  Depalpur                                           Attahada   
+7     453001  Depalpur                                             Atwada   
+8     453001  Depalpur                                         Aurangpura   
+9     453220  Depalpur                                           Bachhoda   
+10    453441      Mhow                                           Badgonda   
+11    453551    Sanwer                                       Badodia Khan   
+12    453441      Mhow                                                Bai   
+13    453551    Sanwer                                        Baloda Tkun   
+14    453115  Depalpur                                            Banadia   
+15    452016    Indore                                        Baoliakhurd   
+16    453771    Indore                                       Barlai Jagir   
+17    453001  Depalpur                                              Betma   
+18    453111  Depalpur                                            Bhagana   
+19    453441      Mhow                                            Bhagora   
+20    453111  Depalpur                                        Bhanwrasala   
+21    453441      Mhow                                          Bhatkhedi   
+22    453220  Depalpur                                         Bhilbadoli   
+23    452016    Indore                                    Bicholi Mardana   
+24    452005    Indore                                       Bijasan Road   
+25    453001  Depalpur                                            Binawda   
+26    452016    Indore                                         Burankhedi   
+27    453220  Depalpur                                            Chadoda   
+28    452024    Indore                    Chairman M.P.PSC Residency Area   
+29    453220  Depalpur                                            Chambal   
+30    453551    Sanwer                                           Chittoda   
+31    453441      Mhow                                             Choral   
+32    453441      Mhow                                            Chordia   
+33    452036    Indore                              Collector Moti Tabela   
+34    452023    Indore                                    Commandant APTC   
+35    452022    Indore                                Commandant CSWT BSF   
+36    452047    Indore         Commissioner Central Excise Manik Bag Road   
+37    452035    Indore             Commissioner Income Tax Residency Area   
+38    452038    Indore            Commissioner Moti Bunlow MG Road Bhopal   
+39    452031    Indore                           Commissioner Nagar Nigam   
+40    453771    Indore                                           Dakachia   
+41    452020    Indore                                             Datoda   
+42    453115  Depalpur                                           Depalpur   
+43    453001  Depalpur                                            Dhannad   
+44    453441      Mhow                                           Dharnaka   
+45    452016    Indore                                             Dudhia   
+46    453220  Depalpur                                           Farkodha   
+47    453236    Sanwer                                            Fc Ganj   
+48    453112  Depalpur                                        Gandhinagar   
+49    453220  Depalpur                                         Gautampura   
+50    453441      Mhow                                       Gawlipalasia   
+51    453220  Depalpur                                             Girota   
+52    453115  Depalpur                                           Gokulpur   
+53    453441      Mhow                                         Gujarkheda   
+54    453551    Sanwer                                              Guran   
+55    452007    Indore                                    Gurunanak Chauk   
+56    453441      Mhow                                            Harsola   
+57    453661      Mhow                                           Hasalpur   
+58    453111  Depalpur                                              Hatod   
+59    452030    Indore                             I.D.A. Racecourse Road   
+60    452046    Indore     Incharge Zila Rojgar Karjalaya Palsikar Colony   
+61    Indore    Indore                                             452001   
+62    452013    Indore                                         Indore Cat   
+63    452001    Indore                                 Indore CGO Complex   
+64    452002    Indore                                      Indore City-2   
+65    452002    Indore                                Indore Cloth Market   
+66    452007    Indore                                Indore Collectorate   
+67    452007    Indore                                      Indore Courts   
+68    452010    Indore                                   Indore DDU Nagar   
+69    452001    Indore                               Indore Govt. College   
+70    452015    Indore                             Indore Industrial Area   
+71    452001    Indore                                 Indore Javeri Bagh   
+72    452016    Indore                                Indore Kanadia Road   
+73    452003    Indore                                 Indore Kumar Khadi   
+74    452003    Indore                                  Indore Malwa Mill   
+75    452001    Indore                               Indore Manorama Ganj   
+76    452007    Indore                                       Indore Nagar   
+77    452003    Indore                                 Indore Pardesipura   
+78    452008    Indore                                 Indore R.S.S.Nagar   
+79    452002    Indore                                 Indore Raj Mohalla   
+80    452007    Indore                                    Indore Ram Bagh   
+81    452007    Indore                                    Indore Siyaganj   
+82    452018    Indore                                 Indore Tillaknagar   
+83    452001    Indore                                    Indore Tukoganj   
+84    452001    Indore                              Indore Uchchanyayalay   
+85    452015    Indore                                  Industrial Estate   
+86    453220  Depalpur                                       Jalodiyagyan   
+87    453111  Depalpur                                    Jamburdi Sarwar   
+88    453112  Depalpur                                      Jamburdihapsi   
+89    453441      Mhow                                              Jamli   
+90    452016    Indore                                           Jhalaria   
+91    453551    Sanwer                                         Jindakheda   
+92    452020    Indore                                       Joshiguradia   
+93    452001    Indore                                        Juni Indore   
+94    453551    Sanwer                                           Kachalia   
+95    453771    Indore                                     Kadwali Bujurg   
+96    453001  Depalpur                                            Kalaria   
+97    453001  Depalpur                                        Kallibillod   
+98    453111  Depalpur                                             Kalmer   
+99    453661      Mhow                                           Kamadpur   
+100   452020    Indore                                             Kampel   
+101   452016    Indore                                            Kanadia   
+102   453551    Sanwer                                        Kankariapal   
+103   453220  Depalpur                                            Kanwasa   
+104   453001  Depalpur                                            Karadia   
+105   452020    Indore                                       Kasturbagram   
+106   453441      Mhow                                              Kelod   
+107   452020    Indore                                        Kelodkartal   
+108   452014    Indore                                     Khatiwala Tank   
+109   453661      Mhow                                        Khedi Sihod   
+110   452016    Indore                                             Khudel   
+111   453661      Mhow                                             Khurdi   
+112   453441      Mhow                                         Kishanganj   
+113   453441      Mhow                                             Kodria   
+114   453551    Sanwer                                             Kudana   
+115   452034    Indore           Kulpati Devil Ahilya vishva Khandva Road   
+116   453771    Indore                                            Lasudia   
+117   452029    Indore                                     LIC 19 MG Road   
+118   453115  Depalpur                                        Limbiodapar   
+119   452009    Indore                              Lokmanya Nagar Indore   
+120   453001  Depalpur                                             Machal   
+121   452020    Indore                                             Machla   
+122   453001  Depalpur                                          Maithwada   
+123   453771    Indore                                            Manglia   
+124   453661      Mhow                                             Manpur   
+125   453441      Mhow                                                Men   
+126   453220  Depalpur                                         Mendakwasa   
+127   453441      Mhow                                               Mhow   
+128   452001      Mhow                                      Mhow Barracks   
+129   453441      Mhow                                         Mhow Cantt   
+130   453441      Mhow                             Mhow College Of Combat   
+131   453441      Mhow                                          Mhow Gaon   
+132   453441      Mhow                               Mhow Infantry School   
+133   453441      Mhow                              Mhow Railway Stattion   
+134   453115  Depalpur                                           Murkheda   
+135   452011    Indore                                        Nanda Nagar   
+136   453115  Depalpur                                              Neori   
+137   452007    Indore                                  Pagnispaga Indore   
+138   453112  Depalpur                                          Palakhedi   
+139   452020    Indore                                              Palda   
+140   453111  Depalpur                                             Paliya   
+141   453771    Indore                                              Panod   
+142   453661      Mhow                                            Paphund   
+143   452020    Indore                                              Pedmi   
+144   453331      Mhow                                          Pigdamber   
+145   452020    Indore                                            Pipalda   
+146   452020    Indore                                             Piwdai   
+147   452033    Indore          Prabhandhak Jila Udyog Kendra Polo Ground   
+148   452001    Indore                                Radio Colony Indore   
+149   452012    Indore                                     Rajendra Nagar   
+150   453551    Sanwer                                             Rajoda   
+151   453001  Depalpur                                           Rangwasa   
+152   453001  Depalpur                                           Rangwasa   
+153   453331      Mhow                                                Rao   
+154   453446      Mhow                                          Rasalpura   
+155   452037    Indore                       Registrar High Court MG Road   
+156   453001  Depalpur                                              Rolai   
+157   452045    Indore         Sachiv Madhyamik Shiksha Mandal Chiman Bag   
+158   452006    Indore                                 Sadar Bazar Indore   
+159   453001  Depalpur                                             Sagdod   
+160   452027    Indore                           Sampadak Agniban Rajbada   
+161   452042    Indore                Sampadak chautha Sansar Sanwer Road   
+162   452025    Indore                    Sampadak Dainik Bhaskar AB Road   
+163   452043    Indore  Sampadak Dainik jagran. Roshansingh Bhandari marg   
+164   452026    Indore                  Sampadak Nai Duniya Kesarbad Road   
+165   452032    Indore             Sampadak Niragdham Dulex shopping Comp   
+166   452039    Indore           Sampadak Sat Prachar Press. Navratan Bag   
+167   452041    Indore                         Sampadak Swadesh Tilakpath   
+168   452016    Indore                                          Sanawadia   
+169   452040    Indore          Sanpadak mashi Mandir, Prem Marg N.N.Road   
+170   453551    Sanwer                                             Sanwer   
+171   452003    Indore                            Sanwer Link Road Indore   
+172   452019    Indore                             SBI Main Branch Indore   
+173   452016    Indore                                        Semlia Chau   
+174   452020    Indore                                             Simrol   
+175   452016    Indore                                             Sivani   
+176   453551    Sanwer                                           Solsinda   
+177   453332    Indore                     Sonway Bhensolay Audygik Kshet   
+178   452021    Indore                 State Bank of Indore Yashwant Road   
+179   452009    Indore                                       Sudama Nagar   
+180   453115  Depalpur                                             Sumtha   
+181   453331      Mhow                                               Tihi   
+182   452020    Indore                                       Tillorbujurg   
+183   452020    Indore                                        Tillorkhurd   
+184   453771    Indore                                               Todi   
+185   453331      Mhow                                             Umaria   
+186   452003    Indore                                       Vallabhnagar   
+187   452010    Indore                                        Vijay Nagar   
+188   453661      Mhow                                     Yashwant Nagar   
+
+       Latitude   Longitude  
+0      22.72707    75.86652  
+1     22.850004   75.549996  
+2      22.98412    75.83652  
+3     22.850006   75.549994  
+4    22.5524482  75.7565163  
+5      22.72825     75.8453  
+6     22.850008   75.549992  
+7     22.850006   75.549994  
+8      22.85001    75.54999  
+9      23.00525    75.52936  
+10   22.5524452  75.7565193  
+11     22.98412    75.83652  
+12   22.5524402  75.7565243  
+13     22.14067   82.480702  
+14    22.850007   75.549993  
+15      22.7125     75.8419  
+16    22.433502   77.424698  
+17    22.683305   75.616695  
+18    22.850007   75.549993  
+19   22.5524442  75.7565203  
+20      22.8101     75.7153  
+21   22.6017016  75.7117673  
+22     23.00525    75.52936  
+23       22.494   75.668125  
+24    22.046997   74.727263  
+25    22.850007   75.549993  
+26   22.7195787  75.8577158  
+27     23.00525    75.52936  
+28     22.72707    75.86652  
+29     23.00525    75.52936  
+30     22.98412    75.83652  
+31   22.5524432  75.7565213  
+32   22.5524442  75.7565203  
+33     22.72707    75.86652  
+34     22.72707    75.86652  
+35     22.72707    75.86652  
+36     22.72707    75.86652  
+37     22.72707    75.86652  
+38     22.72707    75.86652  
+39     22.72707    75.86652  
+40   22.7195767  75.8577178  
+41   22.7195747  75.8577198  
+42   22.8502695  75.5457668  
+43    22.850007   75.549993  
+44   22.5667999  75.7480787  
+45    22.678342   75.937886  
+46     23.00525    75.52936  
+47     22.71202    76.01229  
+48    22.850011   75.549989  
+49     23.00525    75.52936  
+50      22.5111    75.74955  
+51     23.00525    75.52936  
+52    22.850008   75.549992  
+53   22.5524472  75.7565173  
+54     22.98412    75.83652  
+55      22.7314    75.78715  
+56   22.5524442  75.7565203  
+57   22.5584432  75.7560375  
+58    22.850005   75.549995  
+59     22.72707    75.86652  
+60     22.72707    75.86652  
+61   22.7139296  75.8833438  
+62      22.6716    75.83505  
+63   22.7195867  75.8577078  
+64   22.7195817  75.8577128  
+65   22.7195877  75.8577068  
+66   22.7195877  75.8577068  
+67   22.7195817  75.8577128  
+68   22.7195847  75.8577098  
+69     22.69365    75.80425  
+70   22.7195907  75.8577038  
+71     22.69365    75.80425  
+72   22.7195877  75.8577068  
+73   22.7195867  75.8577078  
+74   22.7195857  75.8577088  
+75   22.7195887  75.8577058  
+76      22.7314    75.78715  
+77   22.7195867  75.8577078  
+78   22.7195867  75.8577078  
+79   22.7195867  75.8577078  
+80      22.7314    75.78715  
+81   22.7195837  75.8577108  
+82   22.7195867  75.8577078  
+83   22.7195837  75.8577108  
+84     22.69365    75.80425  
+85      22.7125     75.8419  
+86     23.00525    75.52936  
+87    22.849105    75.72323  
+88    22.850013   75.549987  
+89   22.5524422  75.7565223  
+90   22.7195767  75.8577178  
+91   22.8759908  75.7240554  
+92   22.7195807  75.8577138  
+93     22.69365    75.80425  
+94     22.98412    75.83652  
+95      22.3889     75.7431  
+96    22.850007   75.549993  
+97    22.850011   75.549989  
+98    22.850006   75.549994  
+99   22.5524452  75.7565193  
+100    22.68105     75.8727  
+101   22.720862  75.9004922  
+102    22.98412    75.83652  
+103    23.00525    75.52936  
+104   22.850007   75.549993  
+105   22.643031  75.8893632  
+106     22.5111    75.74955  
+107  22.7195797  75.8577148  
+108     22.7125     75.8419  
+109    22.39412    75.62908  
+110  22.7195747  75.8577198  
+111  22.5524432  75.7565213  
+112  22.5524472  75.7565173  
+113  22.5524432  75.7565213  
+114    22.98412    75.83652  
+115  22.2876533  70.7434765  
+116  22.7863333  75.9005864  
+117    22.72707    75.86652  
+118   22.850011   75.549989  
+119    22.77545    75.84535  
+120   22.850006   75.549994  
+121   22.636665  75.8426778  
+122    22.71953    75.61955  
+123  22.8162397  75.9172904  
+124  22.5524432  75.7565213  
+125  22.5524402  75.7565243  
+126    23.00525    75.52936  
+127   22.550004   75.766696  
+128    22.69365    75.80425  
+129  22.5524472  75.7565173  
+130  22.5524592  75.7565053  
+131  22.5524462  75.7565183  
+132  22.5524572  75.7565073  
+133     22.5111    75.74955  
+134   22.850008   75.549992  
+135     22.7125     75.8419  
+136    22.83653     75.5511  
+137     22.7314    75.78715  
+138   22.850009   75.549991  
+139  22.6857795  75.9005884  
+140   22.850006   75.549994  
+141  22.7195737  75.8577208  
+142  22.7195687  75.8577258  
+143  22.7195737  75.8577208  
+144  22.5524462  75.7565183  
+145  22.7195757  75.8577188  
+146    22.68105     75.8727  
+147    22.72707    75.86652  
+148    22.69365    75.80425  
+149    22.68105    75.86245  
+150  22.9005692  75.8504844  
+151   22.850008   75.549992  
+152   22.850008   75.549992  
+153  22.7054378   75.843607  
+154     22.6968     75.7495  
+155    22.72707    75.86652  
+156    22.71953    75.61955  
+157    22.72707    75.86652  
+158  22.2996466  70.7971116  
+159   22.850006   75.549994  
+160    22.72707    75.86652  
+161    22.72707    75.86652  
+162    22.72707    75.86652  
+163    22.72707    75.86652  
+164    22.72707    75.86652  
+165    22.72707    75.86652  
+166    22.72707    75.86652  
+167    22.72707    75.86652  
+168  22.6455391  75.9071128  
+169    22.72707    75.86652  
+170  22.7541031  75.8464445  
+171  22.9735688  75.8279516  
+172     22.7125     75.8419  
+173     22.7125     75.8419  
+174  22.5402324  75.9175384  
+175  22.7195747  75.8577198  
+176   22.874759   75.845138  
+177    22.71202    76.01229  
+178    22.72707    75.86652  
+179    22.77545    75.84535  
+180   22.850006   75.549994  
+181    22.62755    75.80085  
+182  22.7195807  75.8577138  
+183   22.616099  75.9528557  
+184  22.7195727  75.8577218  
+185  22.6121063  75.7765377  
+186  22.7284907  75.8729906  
+187    22.66215     75.9035  
+188    22.39412    75.62908  
+
+neighborhoods
+
+PIN Code	Borough	Neighborhood	Latitude	Longitude
+0	452044	Indore	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.72707	75.86652
+1	453115	Depalpur	Agra	22.850004	75.549996
+2	453551	Sanwer	Ajnod	22.98412	75.83652
+3	453111	Depalpur	Alwasa	22.850006	75.549994
+4	453441	Mhow	Ambachandan	22.5524482	75.7565163
+...	...	...	...	...	...
+184	453771	Indore	Todi	22.7195727	75.8577218
+185	453331	Mhow	Umaria	22.6121063	75.7765377
+186	452003	Indore	Vallabhnagar	22.7284907	75.8729906
+187	452010	Indore	Vijay Nagar	22.66215	75.9035
+188	453661	Mhow	Yashwant Nagar	22.39412	75.62908
+189 rows × 5 columns
+
+Their is a row in which the pin code is replaced by indore city's information.We will drop this row
+
+neighborhoods.drop(neighborhoods[neighborhoods['PIN Code'] == 'Indore'].index, inplace = True)
+Lets look at our dataset that we have created
+
+
+with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    print(neighborhoods)
+    PIN Code   Borough                                       Neighborhood  \
+0     452044    Indore           Adhyaksha Jila Upbhokta Forum Azad Nagar   
+1     453115  Depalpur                                               Agra   
+2     453551    Sanwer                                              Ajnod   
+3     453111  Depalpur                                             Alwasa   
+4     453441      Mhow                                        Ambachandan   
+5     452006    Indore                                  Army Head Quarter   
+6     453115  Depalpur                                           Attahada   
+7     453001  Depalpur                                             Atwada   
+8     453001  Depalpur                                         Aurangpura   
+9     453220  Depalpur                                           Bachhoda   
+10    453441      Mhow                                           Badgonda   
+11    453551    Sanwer                                       Badodia Khan   
+12    453441      Mhow                                                Bai   
+13    453551    Sanwer                                        Baloda Tkun   
+14    453115  Depalpur                                            Banadia   
+15    452016    Indore                                        Baoliakhurd   
+16    453771    Indore                                       Barlai Jagir   
+17    453001  Depalpur                                              Betma   
+18    453111  Depalpur                                            Bhagana   
+19    453441      Mhow                                            Bhagora   
+20    453111  Depalpur                                        Bhanwrasala   
+21    453441      Mhow                                          Bhatkhedi   
+22    453220  Depalpur                                         Bhilbadoli   
+23    452016    Indore                                    Bicholi Mardana   
+24    452005    Indore                                       Bijasan Road   
+25    453001  Depalpur                                            Binawda   
+26    452016    Indore                                         Burankhedi   
+27    453220  Depalpur                                            Chadoda   
+28    452024    Indore                    Chairman M.P.PSC Residency Area   
+29    453220  Depalpur                                            Chambal   
+30    453551    Sanwer                                           Chittoda   
+31    453441      Mhow                                             Choral   
+32    453441      Mhow                                            Chordia   
+33    452036    Indore                              Collector Moti Tabela   
+34    452023    Indore                                    Commandant APTC   
+35    452022    Indore                                Commandant CSWT BSF   
+36    452047    Indore         Commissioner Central Excise Manik Bag Road   
+37    452035    Indore             Commissioner Income Tax Residency Area   
+38    452038    Indore            Commissioner Moti Bunlow MG Road Bhopal   
+39    452031    Indore                           Commissioner Nagar Nigam   
+40    453771    Indore                                           Dakachia   
+41    452020    Indore                                             Datoda   
+42    453115  Depalpur                                           Depalpur   
+43    453001  Depalpur                                            Dhannad   
+44    453441      Mhow                                           Dharnaka   
+45    452016    Indore                                             Dudhia   
+46    453220  Depalpur                                           Farkodha   
+47    453236    Sanwer                                            Fc Ganj   
+48    453112  Depalpur                                        Gandhinagar   
+49    453220  Depalpur                                         Gautampura   
+50    453441      Mhow                                       Gawlipalasia   
+51    453220  Depalpur                                             Girota   
+52    453115  Depalpur                                           Gokulpur   
+53    453441      Mhow                                         Gujarkheda   
+54    453551    Sanwer                                              Guran   
+55    452007    Indore                                    Gurunanak Chauk   
+56    453441      Mhow                                            Harsola   
+57    453661      Mhow                                           Hasalpur   
+58    453111  Depalpur                                              Hatod   
+59    452030    Indore                             I.D.A. Racecourse Road   
+60    452046    Indore     Incharge Zila Rojgar Karjalaya Palsikar Colony   
+62    452013    Indore                                         Indore Cat   
+63    452001    Indore                                 Indore CGO Complex   
+64    452002    Indore                                      Indore City-2   
+65    452002    Indore                                Indore Cloth Market   
+66    452007    Indore                                Indore Collectorate   
+67    452007    Indore                                      Indore Courts   
+68    452010    Indore                                   Indore DDU Nagar   
+69    452001    Indore                               Indore Govt. College   
+70    452015    Indore                             Indore Industrial Area   
+71    452001    Indore                                 Indore Javeri Bagh   
+72    452016    Indore                                Indore Kanadia Road   
+73    452003    Indore                                 Indore Kumar Khadi   
+74    452003    Indore                                  Indore Malwa Mill   
+75    452001    Indore                               Indore Manorama Ganj   
+76    452007    Indore                                       Indore Nagar   
+77    452003    Indore                                 Indore Pardesipura   
+78    452008    Indore                                 Indore R.S.S.Nagar   
+79    452002    Indore                                 Indore Raj Mohalla   
+80    452007    Indore                                    Indore Ram Bagh   
+81    452007    Indore                                    Indore Siyaganj   
+82    452018    Indore                                 Indore Tillaknagar   
+83    452001    Indore                                    Indore Tukoganj   
+84    452001    Indore                              Indore Uchchanyayalay   
+85    452015    Indore                                  Industrial Estate   
+86    453220  Depalpur                                       Jalodiyagyan   
+87    453111  Depalpur                                    Jamburdi Sarwar   
+88    453112  Depalpur                                      Jamburdihapsi   
+89    453441      Mhow                                              Jamli   
+90    452016    Indore                                           Jhalaria   
+91    453551    Sanwer                                         Jindakheda   
+92    452020    Indore                                       Joshiguradia   
+93    452001    Indore                                        Juni Indore   
+94    453551    Sanwer                                           Kachalia   
+95    453771    Indore                                     Kadwali Bujurg   
+96    453001  Depalpur                                            Kalaria   
+97    453001  Depalpur                                        Kallibillod   
+98    453111  Depalpur                                             Kalmer   
+99    453661      Mhow                                           Kamadpur   
+100   452020    Indore                                             Kampel   
+101   452016    Indore                                            Kanadia   
+102   453551    Sanwer                                        Kankariapal   
+103   453220  Depalpur                                            Kanwasa   
+104   453001  Depalpur                                            Karadia   
+105   452020    Indore                                       Kasturbagram   
+106   453441      Mhow                                              Kelod   
+107   452020    Indore                                        Kelodkartal   
+108   452014    Indore                                     Khatiwala Tank   
+109   453661      Mhow                                        Khedi Sihod   
+110   452016    Indore                                             Khudel   
+111   453661      Mhow                                             Khurdi   
+112   453441      Mhow                                         Kishanganj   
+113   453441      Mhow                                             Kodria   
+114   453551    Sanwer                                             Kudana   
+115   452034    Indore           Kulpati Devil Ahilya vishva Khandva Road   
+116   453771    Indore                                            Lasudia   
+117   452029    Indore                                     LIC 19 MG Road   
+118   453115  Depalpur                                        Limbiodapar   
+119   452009    Indore                              Lokmanya Nagar Indore   
+120   453001  Depalpur                                             Machal   
+121   452020    Indore                                             Machla   
+122   453001  Depalpur                                          Maithwada   
+123   453771    Indore                                            Manglia   
+124   453661      Mhow                                             Manpur   
+125   453441      Mhow                                                Men   
+126   453220  Depalpur                                         Mendakwasa   
+127   453441      Mhow                                               Mhow   
+128   452001      Mhow                                      Mhow Barracks   
+129   453441      Mhow                                         Mhow Cantt   
+130   453441      Mhow                             Mhow College Of Combat   
+131   453441      Mhow                                          Mhow Gaon   
+132   453441      Mhow                               Mhow Infantry School   
+133   453441      Mhow                              Mhow Railway Stattion   
+134   453115  Depalpur                                           Murkheda   
+135   452011    Indore                                        Nanda Nagar   
+136   453115  Depalpur                                              Neori   
+137   452007    Indore                                  Pagnispaga Indore   
+138   453112  Depalpur                                          Palakhedi   
+139   452020    Indore                                              Palda   
+140   453111  Depalpur                                             Paliya   
+141   453771    Indore                                              Panod   
+142   453661      Mhow                                            Paphund   
+143   452020    Indore                                              Pedmi   
+144   453331      Mhow                                          Pigdamber   
+145   452020    Indore                                            Pipalda   
+146   452020    Indore                                             Piwdai   
+147   452033    Indore          Prabhandhak Jila Udyog Kendra Polo Ground   
+148   452001    Indore                                Radio Colony Indore   
+149   452012    Indore                                     Rajendra Nagar   
+150   453551    Sanwer                                             Rajoda   
+151   453001  Depalpur                                           Rangwasa   
+152   453001  Depalpur                                           Rangwasa   
+153   453331      Mhow                                                Rao   
+154   453446      Mhow                                          Rasalpura   
+155   452037    Indore                       Registrar High Court MG Road   
+156   453001  Depalpur                                              Rolai   
+157   452045    Indore         Sachiv Madhyamik Shiksha Mandal Chiman Bag   
+158   452006    Indore                                 Sadar Bazar Indore   
+159   453001  Depalpur                                             Sagdod   
+160   452027    Indore                           Sampadak Agniban Rajbada   
+161   452042    Indore                Sampadak chautha Sansar Sanwer Road   
+162   452025    Indore                    Sampadak Dainik Bhaskar AB Road   
+163   452043    Indore  Sampadak Dainik jagran. Roshansingh Bhandari marg   
+164   452026    Indore                  Sampadak Nai Duniya Kesarbad Road   
+165   452032    Indore             Sampadak Niragdham Dulex shopping Comp   
+166   452039    Indore           Sampadak Sat Prachar Press. Navratan Bag   
+167   452041    Indore                         Sampadak Swadesh Tilakpath   
+168   452016    Indore                                          Sanawadia   
+169   452040    Indore          Sanpadak mashi Mandir, Prem Marg N.N.Road   
+170   453551    Sanwer                                             Sanwer   
+171   452003    Indore                            Sanwer Link Road Indore   
+172   452019    Indore                             SBI Main Branch Indore   
+173   452016    Indore                                        Semlia Chau   
+174   452020    Indore                                             Simrol   
+175   452016    Indore                                             Sivani   
+176   453551    Sanwer                                           Solsinda   
+177   453332    Indore                     Sonway Bhensolay Audygik Kshet   
+178   452021    Indore                 State Bank of Indore Yashwant Road   
+179   452009    Indore                                       Sudama Nagar   
+180   453115  Depalpur                                             Sumtha   
+181   453331      Mhow                                               Tihi   
+182   452020    Indore                                       Tillorbujurg   
+183   452020    Indore                                        Tillorkhurd   
+184   453771    Indore                                               Todi   
+185   453331      Mhow                                             Umaria   
+186   452003    Indore                                       Vallabhnagar   
+187   452010    Indore                                        Vijay Nagar   
+188   453661      Mhow                                     Yashwant Nagar   
+
+       Latitude   Longitude  
+0      22.72707    75.86652  
+1     22.850004   75.549996  
+2      22.98412    75.83652  
+3     22.850006   75.549994  
+4    22.5524482  75.7565163  
+5      22.72825     75.8453  
+6     22.850008   75.549992  
+7     22.850006   75.549994  
+8      22.85001    75.54999  
+9      23.00525    75.52936  
+10   22.5524452  75.7565193  
+11     22.98412    75.83652  
+12   22.5524402  75.7565243  
+13     22.14067   82.480702  
+14    22.850007   75.549993  
+15      22.7125     75.8419  
+16    22.433502   77.424698  
+17    22.683305   75.616695  
+18    22.850007   75.549993  
+19   22.5524442  75.7565203  
+20      22.8101     75.7153  
+21   22.6017016  75.7117673  
+22     23.00525    75.52936  
+23       22.494   75.668125  
+24    22.046997   74.727263  
+25    22.850007   75.549993  
+26   22.7195787  75.8577158  
+27     23.00525    75.52936  
+28     22.72707    75.86652  
+29     23.00525    75.52936  
+30     22.98412    75.83652  
+31   22.5524432  75.7565213  
+32   22.5524442  75.7565203  
+33     22.72707    75.86652  
+34     22.72707    75.86652  
+35     22.72707    75.86652  
+36     22.72707    75.86652  
+37     22.72707    75.86652  
+38     22.72707    75.86652  
+39     22.72707    75.86652  
+40   22.7195767  75.8577178  
+41   22.7195747  75.8577198  
+42   22.8502695  75.5457668  
+43    22.850007   75.549993  
+44   22.5667999  75.7480787  
+45    22.678342   75.937886  
+46     23.00525    75.52936  
+47     22.71202    76.01229  
+48    22.850011   75.549989  
+49     23.00525    75.52936  
+50      22.5111    75.74955  
+51     23.00525    75.52936  
+52    22.850008   75.549992  
+53   22.5524472  75.7565173  
+54     22.98412    75.83652  
+55      22.7314    75.78715  
+56   22.5524442  75.7565203  
+57   22.5584432  75.7560375  
+58    22.850005   75.549995  
+59     22.72707    75.86652  
+60     22.72707    75.86652  
+62      22.6716    75.83505  
+63   22.7195867  75.8577078  
+64   22.7195817  75.8577128  
+65   22.7195877  75.8577068  
+66   22.7195877  75.8577068  
+67   22.7195817  75.8577128  
+68   22.7195847  75.8577098  
+69     22.69365    75.80425  
+70   22.7195907  75.8577038  
+71     22.69365    75.80425  
+72   22.7195877  75.8577068  
+73   22.7195867  75.8577078  
+74   22.7195857  75.8577088  
+75   22.7195887  75.8577058  
+76      22.7314    75.78715  
+77   22.7195867  75.8577078  
+78   22.7195867  75.8577078  
+79   22.7195867  75.8577078  
+80      22.7314    75.78715  
+81   22.7195837  75.8577108  
+82   22.7195867  75.8577078  
+83   22.7195837  75.8577108  
+84     22.69365    75.80425  
+85      22.7125     75.8419  
+86     23.00525    75.52936  
+87    22.849105    75.72323  
+88    22.850013   75.549987  
+89   22.5524422  75.7565223  
+90   22.7195767  75.8577178  
+91   22.8759908  75.7240554  
+92   22.7195807  75.8577138  
+93     22.69365    75.80425  
+94     22.98412    75.83652  
+95      22.3889     75.7431  
+96    22.850007   75.549993  
+97    22.850011   75.549989  
+98    22.850006   75.549994  
+99   22.5524452  75.7565193  
+100    22.68105     75.8727  
+101   22.720862  75.9004922  
+102    22.98412    75.83652  
+103    23.00525    75.52936  
+104   22.850007   75.549993  
+105   22.643031  75.8893632  
+106     22.5111    75.74955  
+107  22.7195797  75.8577148  
+108     22.7125     75.8419  
+109    22.39412    75.62908  
+110  22.7195747  75.8577198  
+111  22.5524432  75.7565213  
+112  22.5524472  75.7565173  
+113  22.5524432  75.7565213  
+114    22.98412    75.83652  
+115  22.2876533  70.7434765  
+116  22.7863333  75.9005864  
+117    22.72707    75.86652  
+118   22.850011   75.549989  
+119    22.77545    75.84535  
+120   22.850006   75.549994  
+121   22.636665  75.8426778  
+122    22.71953    75.61955  
+123  22.8162397  75.9172904  
+124  22.5524432  75.7565213  
+125  22.5524402  75.7565243  
+126    23.00525    75.52936  
+127   22.550004   75.766696  
+128    22.69365    75.80425  
+129  22.5524472  75.7565173  
+130  22.5524592  75.7565053  
+131  22.5524462  75.7565183  
+132  22.5524572  75.7565073  
+133     22.5111    75.74955  
+134   22.850008   75.549992  
+135     22.7125     75.8419  
+136    22.83653     75.5511  
+137     22.7314    75.78715  
+138   22.850009   75.549991  
+139  22.6857795  75.9005884  
+140   22.850006   75.549994  
+141  22.7195737  75.8577208  
+142  22.7195687  75.8577258  
+143  22.7195737  75.8577208  
+144  22.5524462  75.7565183  
+145  22.7195757  75.8577188  
+146    22.68105     75.8727  
+147    22.72707    75.86652  
+148    22.69365    75.80425  
+149    22.68105    75.86245  
+150  22.9005692  75.8504844  
+151   22.850008   75.549992  
+152   22.850008   75.549992  
+153  22.7054378   75.843607  
+154     22.6968     75.7495  
+155    22.72707    75.86652  
+156    22.71953    75.61955  
+157    22.72707    75.86652  
+158  22.2996466  70.7971116  
+159   22.850006   75.549994  
+160    22.72707    75.86652  
+161    22.72707    75.86652  
+162    22.72707    75.86652  
+163    22.72707    75.86652  
+164    22.72707    75.86652  
+165    22.72707    75.86652  
+166    22.72707    75.86652  
+167    22.72707    75.86652  
+168  22.6455391  75.9071128  
+169    22.72707    75.86652  
+170  22.7541031  75.8464445  
+171  22.9735688  75.8279516  
+172     22.7125     75.8419  
+173     22.7125     75.8419  
+174  22.5402324  75.9175384  
+175  22.7195747  75.8577198  
+176   22.874759   75.845138  
+177    22.71202    76.01229  
+178    22.72707    75.86652  
+179    22.77545    75.84535  
+180   22.850006   75.549994  
+181    22.62755    75.80085  
+182  22.7195807  75.8577138  
+183   22.616099  75.9528557  
+184  22.7195727  75.8577218  
+185  22.6121063  75.7765377  
+186  22.7284907  75.8729906  
+187    22.66215     75.9035  
+188    22.39412    75.62908  
+Lets check the datatype of our dataset's coloumn
+
+
+neighborhoods.dtypes
+
+PIN Code        object
+Borough         object
+Neighborhood    object
+Latitude        object
+Longitude       object
+dtype: object
+
+neighborhoods.reset_index()
+
+index	PIN Code	Borough	Neighborhood	Latitude	Longitude
+0	0	452044	Indore	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.72707	75.86652
+1	1	453115	Depalpur	Agra	22.850004	75.549996
+2	2	453551	Sanwer	Ajnod	22.98412	75.83652
+3	3	453111	Depalpur	Alwasa	22.850006	75.549994
+4	4	453441	Mhow	Ambachandan	22.5524482	75.7565163
+...	...	...	...	...	...	...
+183	184	453771	Indore	Todi	22.7195727	75.8577218
+184	185	453331	Mhow	Umaria	22.6121063	75.7765377
+185	186	452003	Indore	Vallabhnagar	22.7284907	75.8729906
+186	187	452010	Indore	Vijay Nagar	22.66215	75.9035
+187	188	453661	Mhow	Yashwant Nagar	22.39412	75.62908
+188 rows × 6 columns
+
+Changing the datatype of the Latitude and Longitude column to float64 for future use
+
+
+neighborhoods.Latitude=neighborhoods.Latitude.astype('float64')
+
+neighborhoods.Longitude=neighborhoods.Longitude.astype('float64')
+
+neighborhoods.dtypes
+
+PIN Code         object
+Borough          object
+Neighborhood     object
+Latitude        float64
+Longitude       float64
+dtype: object
+Adding one more entry in dataset
+Rajwada is a historical palace in Indore city.Many travellers comes here to see different structures and monuments.
+I have added this place because i live in this area only :)
+
+
+neighborhoods = neighborhoods.append({'PIN Code': '452007',
+                                                  'Borough': 'Indore',
+                                                  'Neighborhood': 'Rajwada',
+                                                  'Latitude': 22.7177,
+                                                  'Longitude': 75.8545}, ignore_index=True)
+
+neighborhoods
+
+PIN Code	Borough	Neighborhood	Latitude	Longitude
+0	452044	Indore	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.727070	75.866520
+1	453115	Depalpur	Agra	22.850004	75.549996
+2	453551	Sanwer	Ajnod	22.984120	75.836520
+3	453111	Depalpur	Alwasa	22.850006	75.549994
+4	453441	Mhow	Ambachandan	22.552448	75.756516
+...	...	...	...	...	...
+184	453331	Mhow	Umaria	22.612106	75.776538
+185	452003	Indore	Vallabhnagar	22.728491	75.872991
+186	452010	Indore	Vijay Nagar	22.662150	75.903500
+187	453661	Mhow	Yashwant Nagar	22.394120	75.629080
+188	452007	Indore	Rajwada	22.717700	75.854500
+189 rows × 5 columns
+
+Importing all the libraries that we will be using in this project
+
+import numpy as np # library to handle data in a vectorized manner
+
+import json # library to handle JSON files
+
+#!pip install geopy
+from geopy.geocoders import Nominatim # convert an address into latitude and longitude values
+
+from pandas.io.json import json_normalize # tranform JSON file into a pandas dataframe
+
+# Matplotlib and associated plotting modules
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+
+# import k-means from clustering stage
+from sklearn.cluster import KMeans
+
+import folium # map rendering library
+
+print('Libraries imported.')
+Libraries imported.
+
+latitude_indore = 22.7196
+
+longitude_indore = 75.8577
+Creating the Map with markers
+
+map_indore = folium.Map(location=[latitude_indore, longitude_indore], zoom_start=10)
+
+# add markers to map
+for lat, lng, borough, Neighbourhood in zip(neighborhoods['Latitude'], neighborhoods['Longitude'], neighborhoods['Borough'], neighborhoods['Neighborhood']):
+    label = '{}, {}'.format(Neighbourhood, borough)
+    label = folium.Popup(label, parse_html=True)
+    folium.CircleMarker(
+        [lat, lng],
+        radius=5,
+        popup=label,
+        color='blue',
+        fill=True,
+        fill_color='#3186cc',
+        fill_opacity=0.7,
+        parse_html=False).add_to(map_indore)  
+    
+map_indore
+Out[30]:
+Make this Notebook Trusted to load map: File -> Trust Notebook
+title
+
+I have used the image format to show the image.Although the map that i have created have many features and you can interact with it
+
+Defining Foursquare API credentials
+For security reasons i am removing my credentials
+
+CLIENT_ID = '#' # your Foursquare ID
+CLIENT_SECRET = '#' # your Foursquare Secret
+VERSION = '20191225' # Foursquare API version
+
+print('Your credentails:')
+print('CLIENT_ID: ' + CLIENT_ID)
+print('CLIENT_SECRET:' + CLIENT_SECRET)
+Your credentails:
+CLIENT_ID: #
+CLIENT_SECRET:#
+As Foursquare provide only a limited number of calls per day we will be using LIMIT = 100
+
+# defining radius and limit of venues to get
+radius=500
+LIMIT=100
+Using the Foursquare API to get nearby venues
+
+def getNearbyVenues(names, latitudes, longitudes, radius=500):
+    
+    venues_list=[]
+    for name, lat, lng in zip(names, latitudes, longitudes):
+        print(name)
+            
+        # create the API request URL
+        url = 'https://api.foursquare.com/v2/venues/explore?&client_id={}&client_secret={}&v={}&ll={},{}&radius={}&limit={}'.format(
+            CLIENT_ID, 
+            CLIENT_SECRET, 
+            VERSION, 
+            lat, 
+            lng, 
+            radius, 
+            LIMIT)
+            
+        # make the GET request
+        results = requests.get(url).json()["response"]['groups'][0]['items']
+        
+        # return only relevant information for each nearby venue
+        venues_list.append([(
+            name, 
+            lat, 
+            lng, 
+            v['venue']['name'], 
+            v['venue']['location']['lat'], 
+            v['venue']['location']['lng'],  
+            v['venue']['categories'][0]['name']) for v in results])
+
+    nearby_venues = pd.DataFrame([item for venue_list in venues_list for item in venue_list])
+    nearby_venues.columns = ['Neighbourhood', 
+                  'Neighbourhood Latitude', 
+                  'Neighbourhood Longitude', 
+                  'Venue', 
+                  'Venue Latitude', 
+                  'Venue Longitude', 
+                  'Venue Category']
+    
+    return(nearby_venues)
+
+indore_venues = getNearbyVenues(names=neighborhoods['Neighborhood'],
+                                   latitudes=neighborhoods['Latitude'],
+                                   longitudes=neighborhoods['Longitude']
+                                  )
+Adhyaksha Jila Upbhokta Forum Azad Nagar
+Agra
+Ajnod
+Alwasa
+Ambachandan
+Army Head Quarter
+Attahada
+Atwada
+Aurangpura
+Bachhoda
+Badgonda
+Badodia Khan
+Bai
+Baloda Tkun
+Banadia
+Baoliakhurd
+Barlai Jagir
+Betma
+Bhagana
+Bhagora
+Bhanwrasala
+Bhatkhedi
+Bhilbadoli
+Bicholi Mardana
+Bijasan Road
+Binawda
+Burankhedi
+Chadoda
+Chairman M.P.PSC Residency Area
+Chambal
+Chittoda
+Choral
+Chordia
+Collector Moti Tabela
+Commandant APTC
+Commandant CSWT BSF
+Commissioner Central Excise Manik Bag Road
+Commissioner Income Tax Residency Area
+Commissioner Moti Bunlow MG Road Bhopal
+Commissioner Nagar Nigam
+Dakachia
+Datoda
+Depalpur
+Dhannad
+Dharnaka
+Dudhia
+Farkodha
+Fc Ganj
+Gandhinagar
+Gautampura
+Gawlipalasia
+Girota
+Gokulpur
+Gujarkheda
+Guran
+Gurunanak Chauk
+Harsola
+Hasalpur
+Hatod
+I.D.A. Racecourse Road
+Incharge Zila Rojgar Karjalaya Palsikar Colony
+Indore Cat
+Indore CGO Complex
+Indore City-2
+Indore Cloth Market
+Indore Collectorate
+Indore Courts
+Indore DDU Nagar
+Indore Govt. College
+Indore Industrial Area
+Indore Javeri Bagh
+Indore Kanadia Road
+Indore Kumar Khadi
+Indore Malwa Mill
+Indore Manorama Ganj
+Indore Nagar
+Indore Pardesipura
+Indore R.S.S.Nagar
+Indore Raj Mohalla
+Indore Ram Bagh
+Indore Siyaganj
+Indore Tillaknagar
+Indore Tukoganj
+Indore Uchchanyayalay
+Industrial Estate
+Jalodiyagyan
+Jamburdi Sarwar
+Jamburdihapsi
+Jamli
+Jhalaria
+Jindakheda
+Joshiguradia
+Juni Indore
+Kachalia
+Kadwali Bujurg
+Kalaria
+Kallibillod
+Kalmer
+Kamadpur
+Kampel
+Kanadia
+Kankariapal
+Kanwasa
+Karadia
+Kasturbagram
+Kelod
+Kelodkartal
+Khatiwala Tank
+Khedi Sihod
+Khudel
+Khurdi
+Kishanganj
+Kodria
+Kudana
+Kulpati Devil Ahilya vishva Khandva Road
+Lasudia
+LIC 19 MG Road
+Limbiodapar
+Lokmanya Nagar Indore
+Machal
+Machla
+Maithwada
+Manglia
+Manpur
+Men
+Mendakwasa
+Mhow
+Mhow Barracks
+Mhow Cantt
+Mhow College Of Combat
+Mhow Gaon
+Mhow Infantry School
+Mhow Railway Stattion
+Murkheda
+Nanda Nagar
+Neori
+Pagnispaga Indore
+Palakhedi
+Palda
+Paliya
+Panod
+Paphund
+Pedmi
+Pigdamber
+Pipalda
+Piwdai
+Prabhandhak Jila Udyog Kendra Polo Ground
+Radio Colony Indore
+Rajendra Nagar
+Rajoda
+Rangwasa
+Rangwasa
+Rao
+Rasalpura
+Registrar High Court MG Road
+Rolai
+Sachiv Madhyamik Shiksha Mandal Chiman Bag
+Sadar Bazar Indore
+Sagdod
+Sampadak Agniban Rajbada
+Sampadak chautha Sansar Sanwer Road
+Sampadak Dainik Bhaskar AB Road
+Sampadak Dainik jagran. Roshansingh Bhandari marg
+Sampadak Nai Duniya Kesarbad Road
+Sampadak Niragdham Dulex shopping Comp
+Sampadak Sat Prachar Press. Navratan Bag
+Sampadak Swadesh Tilakpath
+Sanawadia
+Sanpadak mashi Mandir, Prem Marg N.N.Road
+Sanwer
+Sanwer Link Road Indore
+SBI Main Branch Indore
+Semlia Chau
+Simrol
+Sivani
+Solsinda
+Sonway Bhensolay Audygik Kshet
+State Bank of Indore Yashwant Road
+Sudama Nagar
+Sumtha
+Tihi
+Tillorbujurg
+Tillorkhurd
+Todi
+Umaria
+Vallabhnagar
+Vijay Nagar
+Yashwant Nagar
+Rajwada
+
+indore_venues.head(10)
+
+Neighbourhood	Neighbourhood Latitude	Neighbourhood Longitude	Venue	Venue Latitude	Venue Longitude	Venue Category
+0	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.727070	75.866520	Holkar Cricket Stadium	22.725510	75.865948	Stadium
+1	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.727070	75.866520	Rajat Jewellers	22.727303	75.864240	Jewelry Store
+2	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.727070	75.866520	Laal Balti ki Kachori	22.727952	75.863276	Snack Place
+3	Ambachandan	22.552448	75.756516	YES Bank ATM	22.552400	75.756500	Bank
+4	Ambachandan	22.552448	75.756516	Mhow - Cantt Garden	22.552531	75.758263	Garden
+5	Ambachandan	22.552448	75.756516	Office Bus Stop	22.548346	75.757362	Bus Station
+6	Army Head Quarter	22.728250	75.845300	Nagori Mishtan Bhandar	22.727966	75.846022	Dessert Shop
+7	Badgonda	22.552445	75.756519	YES Bank ATM	22.552400	75.756500	Bank
+8	Badgonda	22.552445	75.756519	Mhow - Cantt Garden	22.552531	75.758263	Garden
+9	Badgonda	22.552445	75.756519	Office Bus Stop	22.548346	75.757362	Bus Station
+
+indore_venues.size
+
+2240
+
+indore_venues.groupby('Neighbourhood').count()
+
+Neighbourhood Latitude	Neighbourhood Longitude	Venue	Venue Latitude	Venue Longitude	Venue Category
+Neighbourhood						
+Adhyaksha Jila Upbhokta Forum Azad Nagar	3	3	3	3	3	3
+Ambachandan	3	3	3	3	3	3
+Army Head Quarter	1	1	1	1	1	1
+Badgonda	3	3	3	3	3	3
+Bai	3	3	3	3	3	3
+...	...	...	...	...	...	...
+State Bank of Indore Yashwant Road	3	3	3	3	3	3
+Tihi	2	2	2	2	2	2
+Tillorbujurg	4	4	4	4	4	4
+Todi	4	4	4	4	4	4
+Vallabhnagar	6	6	6	6	6	6
+94 rows × 6 columns
+
+Analyzing neighbourhood
+We will be using one hot encoding
+
+
+# one hot encoding
+indore_onehot = pd.get_dummies(indore_venues[['Venue Category']], prefix="", prefix_sep="")
+
+# add neighborhood column back to dataframe
+indore_onehot['Neighbourhood'] = indore_venues['Neighbourhood'] 
+
+# move neighborhood column to the first column
+fixed_columns = [indore_onehot.columns[-1]] + list(indore_onehot.columns[:-1])
+indore_onehot.head()
+
+ATM	Art Gallery	Bank	Bus Station	Cafeteria	Café	Chinese Restaurant	Coffee Shop	Dessert Shop	Diner	...	Office	Paper / Office Supplies Store	Restaurant	Shopping Mall	Smoke Shop	Snack Place	Stadium	Tourist Information Center	Train Station	Neighbourhood
+0	0	0	0	0	0	0	0	0	0	0	...	0	0	0	0	0	0	1	0	0	Adhyaksha Jila Upbhokta Forum Azad Nagar
+1	0	0	0	0	0	0	0	0	0	0	...	0	0	0	0	0	0	0	0	0	Adhyaksha Jila Upbhokta Forum Azad Nagar
+2	0	0	0	0	0	0	0	0	0	0	...	0	0	0	0	0	1	0	0	0	Adhyaksha Jila Upbhokta Forum Azad Nagar
+3	0	0	1	0	0	0	0	0	0	0	...	0	0	0	0	0	0	0	0	0	Ambachandan
+4	0	0	0	0	0	0	0	0	0	0	...	0	0	0	0	0	0	0	0	0	Ambachandan
+5 rows × 35 columns
+
+
+indore_onehot.shape
+
+(320, 35)
+
+indore_grouped = indore_onehot.groupby('Neighbourhood').mean().reset_index()
+indore_grouped
+
+Neighbourhood	ATM	Art Gallery	Bank	Bus Station	Cafeteria	Café	Chinese Restaurant	Coffee Shop	Dessert Shop	...	Multiplex	Office	Paper / Office Supplies Store	Restaurant	Shopping Mall	Smoke Shop	Snack Place	Stadium	Tourist Information Center	Train Station
+0	Adhyaksha Jila Upbhokta Forum Azad Nagar	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.333333	0.333333	0.00	0.0
+1	Ambachandan	0.0	0.0	0.333333	0.333333	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.00	0.0
+2	Army Head Quarter	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	1.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.00	0.0
+3	Badgonda	0.0	0.0	0.333333	0.333333	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.00	0.0
+4	Bai	0.0	0.0	0.333333	0.333333	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.00	0.0
+...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+89	State Bank of Indore Yashwant Road	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.333333	0.333333	0.00	0.0
+90	Tihi	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.00	0.0
+91	Tillorbujurg	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.25	0.0
+92	Todi	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.000000	0.0	0.0	0.000000	0.000000	0.25	0.0
+93	Vallabhnagar	0.0	0.0	0.000000	0.000000	0.0	0.0	0.0	0.0	0.0	...	0.0	0.0	0.0	0.166667	0.0	0.0	0.000000	0.000000	0.00	0.0
+94 rows × 35 columns
+
+Most frequent places visited area wise
+
+
+num_top_venues = 5
+
+for hood in indore_grouped['Neighbourhood']:
+    print("----"+hood+"----")
+    temp = indore_grouped[indore_grouped['Neighbourhood'] == hood].T.reset_index()
+    temp.columns = ['venue','freq']
+    temp = temp.iloc[1:]
+    temp['freq'] = temp['freq'].astype(float)
+    temp = temp.round({'freq': 2})
+    print(temp.sort_values('freq', ascending=False).reset_index(drop=True).head(num_top_venues))
+    print('\n')
+----Adhyaksha Jila Upbhokta Forum Azad Nagar----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Ambachandan----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Army Head Quarter----
+                           venue  freq
+0                   Dessert Shop   1.0
+1  Paper / Office Supplies Store   0.0
+2             Light Rail Station   0.0
+3                         Market   0.0
+4                       Mountain   0.0
+
+
+----Badgonda----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Bai----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Baoliakhurd----
+            venue  freq
+0  Ice Cream Shop  0.25
+1     Snack Place  0.25
+2      Smoke Shop  0.25
+3   Movie Theater  0.25
+4       Multiplex  0.00
+
+
+----Bhagora----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Burankhedi----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Chairman M.P.PSC Residency Area----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Choral----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Chordia----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Collector Moti Tabela----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Commandant APTC----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Commandant CSWT BSF----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Commissioner Central Excise Manik Bag Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Commissioner Income Tax Residency Area----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Commissioner Moti Bunlow MG Road Bhopal----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Commissioner Nagar Nigam----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Dakachia----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Datoda----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Gujarkheda----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Harsola----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----I.D.A. Racecourse Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Incharge Zila Rojgar Karjalaya Palsikar Colony----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Indore CGO Complex----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Cat----
+                venue  freq
+0               Diner   0.5
+1           Multiplex   0.5
+2                 ATM   0.0
+3  Light Rail Station   0.0
+4              Market   0.0
+
+
+----Indore City-2----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Cloth Market----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Collectorate----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Courts----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore DDU Nagar----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Industrial Area----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Kanadia Road----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Kumar Khadi----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Malwa Mill----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Manorama Ganj----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Pardesipura----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore R.S.S.Nagar----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Raj Mohalla----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Siyaganj----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Tillaknagar----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Indore Tukoganj----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Industrial Estate----
+            venue  freq
+0  Ice Cream Shop  0.25
+1     Snack Place  0.25
+2      Smoke Shop  0.25
+3   Movie Theater  0.25
+4       Multiplex  0.00
+
+
+----Jamli----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Jhalaria----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Joshiguradia----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Kamadpur----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Kanadia----
+                venue  freq
+0         Coffee Shop  0.29
+1       Shopping Mall  0.14
+2  Chinese Restaurant  0.14
+3                 Gym  0.14
+4   Indian Restaurant  0.14
+
+
+----Kelodkartal----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Khatiwala Tank----
+            venue  freq
+0  Ice Cream Shop  0.25
+1     Snack Place  0.25
+2      Smoke Shop  0.25
+3   Movie Theater  0.25
+4       Multiplex  0.00
+
+
+----Khudel----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Khurdi----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Kishanganj----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Kodria----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Kulpati Devil Ahilya vishva Khandva Road----
+                venue  freq
+0   Indian Restaurant   1.0
+1              Office   0.0
+2       Jewelry Store   0.0
+3  Light Rail Station   0.0
+4              Market   0.0
+
+
+----LIC 19 MG Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Manpur----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Men----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Mhow----
+                           venue  freq
+0  Paper / Office Supplies Store   1.0
+1                         Office   0.0
+2                  Jewelry Store   0.0
+3             Light Rail Station   0.0
+4                         Market   0.0
+
+
+----Mhow Cantt----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Mhow College Of Combat----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Mhow Gaon----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Mhow Infantry School----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Nanda Nagar----
+            venue  freq
+0  Ice Cream Shop  0.25
+1     Snack Place  0.25
+2      Smoke Shop  0.25
+3   Movie Theater  0.25
+4       Multiplex  0.00
+
+
+----Panod----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Paphund----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Pedmi----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Pigdamber----
+                           venue  freq
+0                           Bank  0.33
+1                    Bus Station  0.33
+2                         Garden  0.33
+3                            ATM  0.00
+4  Paper / Office Supplies Store  0.00
+
+
+----Pipalda----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Prabhandhak Jila Udyog Kendra Polo Ground----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Rajendra Nagar----
+               venue  freq
+0      Train Station  0.50
+1  Food & Drink Shop  0.25
+2                ATM  0.25
+3        Bus Station  0.00
+4      Jewelry Store  0.00
+
+
+----Rajwada----
+           venue  freq
+0  Historic Site  0.50
+1    Snack Place  0.25
+2           Café  0.25
+3            ATM  0.00
+4         Office  0.00
+
+
+----Rao----
+           venue  freq
+0    Art Gallery  0.33
+1    Snack Place  0.33
+2   Dessert Shop  0.33
+3         Office  0.00
+4  Jewelry Store  0.00
+
+
+----Registrar High Court MG Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----SBI Main Branch Indore----
+            venue  freq
+0  Ice Cream Shop  0.25
+1     Snack Place  0.25
+2      Smoke Shop  0.25
+3   Movie Theater  0.25
+4       Multiplex  0.00
+
+
+----Sachiv Madhyamik Shiksha Mandal Chiman Bag----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sadar Bazar Indore----
+               venue  freq
+0              Hotel  0.25
+1         Restaurant  0.25
+2  Indian Restaurant  0.25
+3             Office  0.25
+4          Multiplex  0.00
+
+
+----Sampadak Agniban Rajbada----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak Dainik Bhaskar AB Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak Dainik jagran. Roshansingh Bhandari marg----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak Nai Duniya Kesarbad Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak Niragdham Dulex shopping Comp----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak Sat Prachar Press. Navratan Bag----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak Swadesh Tilakpath----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sampadak chautha Sansar Sanwer Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Sanawadia----
+                venue  freq
+0            Mountain   1.0
+1                 ATM   0.0
+2              Office   0.0
+3       Jewelry Store   0.0
+4  Light Rail Station   0.0
+
+
+----Sanpadak mashi Mandir, Prem Marg N.N.Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Semlia Chau----
+            venue  freq
+0  Ice Cream Shop  0.25
+1     Snack Place  0.25
+2      Smoke Shop  0.25
+3   Movie Theater  0.25
+4       Multiplex  0.00
+
+
+----Sivani----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----State Bank of Indore Yashwant Road----
+           venue  freq
+0  Jewelry Store  0.33
+1        Stadium  0.33
+2    Snack Place  0.33
+3            ATM  0.00
+4      Multiplex  0.00
+
+
+----Tihi----
+                venue  freq
+0               Hotel   0.5
+1  Light Rail Station   0.5
+2              Office   0.0
+3       Jewelry Store   0.0
+4              Market   0.0
+
+
+----Tillorbujurg----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Todi----
+                        venue  freq
+0               Historic Site  0.50
+1        Fast Food Restaurant  0.25
+2  Tourist Information Center  0.25
+3                         ATM  0.00
+4          Light Rail Station  0.00
+
+
+----Vallabhnagar----
+                    venue  freq
+0       Indian Restaurant  0.33
+1    Fast Food Restaurant  0.17
+2                  Market  0.17
+3  Furniture / Home Store  0.17
+4              Restaurant  0.17
+
+
+In [43]:
+def return_most_common_venues(row, num_top_venues):
+    row_categories = row.iloc[1:]
+    row_categories_sorted = row_categories.sort_values(ascending=False)
+    
+    return row_categories_sorted.index.values[0:num_top_venues]
+
+num_top_venues = 10
+
+indicators = ['st', 'nd', 'rd']
+
+# create columns according to number of top venues
+columns = ['Neighbourhood']
+for ind in np.arange(num_top_venues):
+    try:
+        columns.append('{}{} Most Common Venue'.format(ind+1, indicators[ind]))
+    except:
+        columns.append('{}th Most Common Venue'.format(ind+1))
+
+# create a new dataframe
+neighbourhoods_venues_sorted = pd.DataFrame(columns=columns)
+neighbourhoods_venues_sorted['Neighbourhood'] = indore_grouped['Neighbourhood']
+
+for ind in np.arange(indore_grouped.shape[0]):
+    neighbourhoods_venues_sorted.iloc[ind, 1:] = return_most_common_venues(indore_grouped.iloc[ind, :], num_top_venues)
+
+neighbourhoods_venues_sorted.head()
+
+Neighbourhood	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+0	Adhyaksha Jila Upbhokta Forum Azad Nagar	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+1	Ambachandan	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+2	Army Head Quarter	Dessert Shop	Train Station	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Tourist Information Center
+3	Badgonda	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+4	Bai	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+
+#neighbourhoods_venues_sorted.loc[neighbourhoods_venues_sorted.Neighbourhood == 'Rajwada']
+K-mean Clustering
+
+# set number of clusters
+kclusters = 5
+
+indore_grouped_clustering = indore_grouped.drop('Neighbourhood', 1)
+
+# run k-means clustering
+kmeans = KMeans(n_clusters=kclusters, random_state=0).fit(indore_grouped_clustering)
+
+# check cluster labels generated for each row in the dataframe
+kmeans.labels_
+
+array([1, 2, 3, 2, 2, 4, 2, 0, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 2, 2,
+       1, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2,
+       0, 0, 2, 3, 0, 4, 0, 2, 2, 2, 3, 1, 2, 2, 3, 2, 2, 2, 2, 4, 0, 0,
+       0, 2, 0, 1, 3, 0, 4, 1, 4, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 4,
+       0, 1, 3, 0, 0, 3])
+
+# add clustering labels
+neighbourhoods_venues_sorted.insert(0, 'Cluster_Labels', kmeans.labels_)
+
+indore_merged = neighborhoods
+
+# merge toronto_grouped with toronto_data to add latitude/longitude for each neighborhood
+indore_merged = indore_merged.join(neighbourhoods_venues_sorted.set_index('Neighbourhood'), on='Neighborhood')
+
+indore_merged.head() # check the last columns!
+
+PIN Code	Borough	Neighborhood	Latitude	Longitude	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+0	452044	Indore	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.727070	75.866520	1.0	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+1	453115	Depalpur	Agra	22.850004	75.549996	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+2	453551	Sanwer	Ajnod	22.984120	75.836520	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+3	453111	Depalpur	Alwasa	22.850006	75.549994	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+4	453441	Mhow	Ambachandan	22.552448	75.756516	2.0	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+
+#indore_merged.loc[indore_merged.Neighborhood == 'Rajwada']
+
+indore_merged=indore_merged.dropna()
+
+indore_merged.Cluster_Labels = indore_merged.Cluster_Labels.astype(int)
+
+# create map
+map_clusters = folium.Map(location=[latitude_indore, longitude_indore], zoom_start=11)
+
+# set color scheme for the clusters
+x = np.arange(kclusters)
+ys = [i + x + (i*x)**2 for i in range(kclusters)]
+colors_array = cm.rainbow(np.linspace(0, 1, len(ys)))
+rainbow = [colors.rgb2hex(i) for i in colors_array]
+
+# add markers to the map
+markers_colors = []
+for lat, lon, poi, cluster in zip(indore_merged['Latitude'], indore_merged['Longitude'], indore_merged['Neighborhood'], indore_merged['Cluster_Labels']):
+    label = folium.Popup(str(poi) + ' Cluster ' + str(cluster), parse_html=True)
+    folium.CircleMarker(
+        [lat, lon],
+        radius=5,
+        popup=label,
+        color=rainbow[cluster-1],
+        fill=True,
+        fill_color=rainbow[cluster-1],
+        fill_opacity=0.7).add_to(map_clusters)
+       
+map_clusters
+
+Make this Notebook Trusted to load map: File -> Trust Notebook
+title
+
+I have zoomed in to the maximum extent in order to show you one of the cluster.Although thier are 5 clusters and they are spreaded over indore,pithampur,depalpur,sawer, and mhow
+
+title
+
+indore_merged
+
+PIN Code	Borough	Neighborhood	Latitude	Longitude	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+0	452044	Indore	Adhyaksha Jila Upbhokta Forum Azad Nagar	22.727070	75.866520	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+4	453441	Mhow	Ambachandan	22.552448	75.756516	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+5	452006	Indore	Army Head Quarter	22.728250	75.845300	3	Dessert Shop	Train Station	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Tourist Information Center
+10	453441	Mhow	Badgonda	22.552445	75.756519	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+12	453441	Mhow	Bai	22.552440	75.756524	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+180	453331	Mhow	Tihi	22.627550	75.800850	3	Hotel	Light Rail Station	Dessert Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Historic Site
+181	452020	Indore	Tillorbujurg	22.719581	75.857714	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+183	453771	Indore	Todi	22.719573	75.857722	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+185	452003	Indore	Vallabhnagar	22.728491	75.872991	3	Indian Restaurant	Furniture / Home Store	Fast Food Restaurant	Restaurant	Market	Train Station	Dessert Shop	Food & Drink Shop	Diner	Coffee Shop
+188	452007	Indore	Rajwada	22.717700	75.854500	0	Historic Site	Snack Place	Café	Train Station	Dessert Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+94 rows × 16 columns
+
+Checking the cluster
+
+indore_merged.loc[indore_merged['Cluster_Labels'] == 0, indore_merged.columns[[1] + list(range(5, indore_merged.shape[1]))]]
+
+Borough	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+26	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+40	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+41	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+62	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+63	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+64	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+65	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+66	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+67	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+69	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+71	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+72	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+73	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+74	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+76	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+77	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+78	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+80	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+81	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+82	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+89	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+91	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+106	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+109	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+140	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+141	Mhow	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+142	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+144	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+174	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+181	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+183	Indore	0	Historic Site	Fast Food Restaurant	Tourist Information Center	Dessert Shop	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Diner	Train Station
+188	Indore	0	Historic Site	Snack Place	Café	Train Station	Dessert Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+
+indore_merged.loc[indore_merged['Cluster_Labels'] == 1, indore_merged.columns[[1] + list(range(5, indore_merged.shape[1]))]]
+Borough	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+0	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+28	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+33	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+34	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+35	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+36	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+37	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+38	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+39	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+59	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+60	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+116	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+146	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+154	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+156	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+159	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+160	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+161	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+162	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+163	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+164	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+165	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+166	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+168	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+177	Indore	1	Stadium	Snack Place	Jewelry Store	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+
+indore_merged.loc[indore_merged['Cluster_Labels'] == 2, indore_merged.columns[[1] + list(range(5, indore_merged.shape[1]))]]
+
+Borough	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+4	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+10	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+12	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+19	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+31	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+32	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+53	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+56	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+88	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+98	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+110	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+111	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+112	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+123	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+124	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+128	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+129	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+130	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+131	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+143	Mhow	2	Bank	Bus Station	Garden	Train Station	Diner	Gym	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Coffee Shop
+
+indore_merged.loc[indore_merged['Cluster_Labels'] == 3, indore_merged.columns[[1] + list(range(5, indore_merged.shape[1]))]]
+
+Borough	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+5	Indore	3	Dessert Shop	Train Station	Gym	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Tourist Information Center
+61	Indore	3	Multiplex	Diner	Train Station	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Dessert Shop	Coffee Shop	Historic Site
+100	Indore	3	Coffee Shop	Shopping Mall	Indian Restaurant	Chinese Restaurant	Cafeteria	Gym	Bus Station	Café	Bank	Historic Site
+114	Indore	3	Indian Restaurant	Train Station	Dessert Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Historic Site
+126	Mhow	3	Paper / Office Supplies Store	Train Station	Coffee Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop	Chinese Restaurant
+148	Indore	3	Train Station	Food & Drink Shop	ATM	Snack Place	Gym	Art Gallery	Bank	Bus Station	Cafeteria	Café
+157	Indore	3	Hotel	Indian Restaurant	Restaurant	Office	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Dessert Shop
+167	Indore	3	Mountain	Train Station	Dessert Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Historic Site
+180	Mhow	3	Hotel	Light Rail Station	Dessert Shop	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Coffee Shop	Historic Site
+185	Indore	3	Indian Restaurant	Furniture / Home Store	Fast Food Restaurant	Restaurant	Market	Train Station	Dessert Shop	Food & Drink Shop	Diner	Coffee Shop
+
+indore_merged.loc[indore_merged['Cluster_Labels'] == 4, indore_merged.columns[[1] + list(range(5, indore_merged.shape[1]))]]
+
+Borough	Cluster_Labels	1st Most Common Venue	2nd Most Common Venue	3rd Most Common Venue	4th Most Common Venue	5th Most Common Venue	6th Most Common Venue	7th Most Common Venue	8th Most Common Venue	9th Most Common Venue	10th Most Common Venue
+15	Indore	4	Snack Place	Smoke Shop	Ice Cream Shop	Movie Theater	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+84	Indore	4	Snack Place	Smoke Shop	Ice Cream Shop	Movie Theater	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+107	Indore	4	Snack Place	Smoke Shop	Ice Cream Shop	Movie Theater	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+134	Indore	4	Snack Place	Smoke Shop	Ice Cream Shop	Movie Theater	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+152	Mhow	4	Dessert Shop	Art Gallery	Snack Place	Train Station	Garden	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner	Chinese Restaurant
+171	Indore	4	Snack Place	Smoke Shop	Ice Cream Shop	Movie Theater	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
+172	Indore	4	Snack Place	Smoke Shop	Ice Cream Shop	Movie Theater	Train Station	Coffee Shop	Furniture / Home Store	Food & Drink Shop	Fast Food Restaurant	Diner
